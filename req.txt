@@ -1,0 +1,22 @@
+# requirements.txt — Face Recognition Doorbell
+# Install: pip install -r requirements.txt
+
+# Core vision
+opencv-python>=4.8.0,<4.11.0
+face-recognition>=1.3.0
+numpy>=1.24.0,<2.0.0
+Pillow>=10.0.0,<11.0.0
+
+# Arduino serial
+pyserial>=3.5
+
+# Web dashboard
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Text-to-speech
+pyttsx3>=2.90
+
+# Google Sheets
+gspread>=6.0.0
+google-auth>=2.0.0

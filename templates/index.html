@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SecureVision — Home Security</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:      #080c10; --panel:   #0d1117; --border:  #1a2332;
+    --accent:  #00e5a0; --danger:  #ff3b5c; --warn:    #ffb800;
+    --dim:     #3a4a5c; --text:    #c8d8e8; --textdim: #4a6070;
+    --mono: 'Share Tech Mono', monospace; --sans: 'Syne', sans-serif;
+    --glow:   0 0 20px rgba(0,229,160,0.25);
+    --glow-r: 0 0 20px rgba(255,59,92,0.25);
+    --glow-w: 0 0 20px rgba(255,184,0,0.25);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px); pointer-events: none; z-index: 1000; }
+  body::after  { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(0,229,160,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,0.03) 1px,transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+
+  header { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 20px 36px; border-bottom: 1px solid var(--border); background: rgba(13,17,23,0.95); backdrop-filter: blur(12px); }
+  .logo { display: flex; align-items: center; gap: 14px; }
+  .logo-icon { width: 38px; height: 38px; border: 2px solid var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: var(--glow); animation: pulse-border 3s ease-in-out infinite; }
+  .logo-icon svg { width: 20px; height: 20px; color: var(--accent); }
+  .logo h1 { font-size: 1.1rem; font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase; color: #fff; }
+  .logo span { color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .sys-time { font-family: var(--mono); font-size: 0.85rem; color: var(--textdim); letter-spacing: 0.1em; }
+  .sys-badge { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em; padding: 4px 10px; border: 1px solid var(--accent); border-radius: 4px; color: var(--accent); text-transform: uppercase; animation: blink 2s step-end infinite; }
+  .admin-btn { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em; padding: 6px 14px; border: 1px solid var(--warn); border-radius: 5px; color: var(--warn); background: rgba(255,184,0,0.08); cursor: pointer; text-transform: uppercase; transition: all 0.2s ease; }
+  .admin-btn:hover { background: rgba(255,184,0,0.18); box-shadow: var(--glow-w); }
+
+  main { position: relative; z-index: 10; display: grid; grid-template-columns: 1fr 340px; gap: 20px; padding: 24px 36px; max-width: 1400px; margin: 0 auto; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; position: relative; }
+  .panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg,transparent,var(--accent),transparent); opacity: 0.4; }
+  .panel-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--textdim); }
+  .panel-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1.5s step-end infinite; }
+
+  .camera-panel { grid-row: 1 / 3; }
+  .camera-wrap { position: relative; width: 100%; aspect-ratio: 4/3; background: #000; overflow: hidden; }
+  #camera-feed { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .camera-overlay { position: absolute; inset: 0; pointer-events: none; }
+  .corner { position: absolute; width: 24px; height: 24px; border-color: var(--accent); border-style: solid; opacity: 0.7; }
+  .corner.tl { top:16px; left:16px; border-width:2px 0 0 2px; } .corner.tr { top:16px; right:16px; border-width:2px 2px 0 0; }
+  .corner.bl { bottom:16px; left:16px; border-width:0 0 2px 2px; } .corner.br { bottom:16px; right:16px; border-width:0 2px 2px 0; }
+  .scan-line { position: absolute; left: 0; right: 0; height: 2px; background: linear-gradient(90deg,transparent,var(--accent),transparent); opacity: 0.4; animation: scan 4s linear infinite; }
+  .camera-status-bar { position: absolute; bottom: 0; left: 0; right: 0; padding: 10px 16px; background: linear-gradient(transparent,rgba(0,0,0,0.85)); display: flex; align-items: center; justify-content: space-between; }
+  .cam-label { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; color: var(--accent); text-transform: uppercase; }
+  .rec-dot { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 0.65rem; color: var(--danger); letter-spacing: 0.1em; }
+  .rec-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--danger); animation: blink 1s step-end infinite; }
+  .no-feed { width: 100%; aspect-ratio: 4/3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: #050810; color: var(--textdim); font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.1em; }
+  .no-feed svg { width: 48px; height: 48px; opacity: 0.3; }
+
+  .status-panel { padding: 20px; }
+  .status-display { text-align: center; padding: 24px 16px; border-radius: 10px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); margin-bottom: 16px; transition: all 0.4s ease; position: relative; overflow: hidden; }
+  .status-display.known   { border-color: rgba(0,229,160,0.4); box-shadow: var(--glow); }
+  .status-display.known::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center,rgba(0,229,160,0.07) 0%,transparent 70%); }
+  .status-display.unknown { border-color: rgba(255,59,92,0.4); box-shadow: var(--glow-r); }
+  .status-display.unknown::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center,rgba(255,59,92,0.07) 0%,transparent 70%); }
+  .status-icon  { font-size: 2.5rem; margin-bottom: 8px; position: relative; z-index: 1; }
+  .status-label { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.2em; color: var(--textdim); text-transform: uppercase; margin-bottom: 4px; position: relative; z-index: 1; }
+  .status-value { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.05em; position: relative; z-index: 1; transition: color 0.4s; }
+  .status-value.known   { color: var(--accent); } .status-value.unknown { color: var(--danger); } .status-value.noface { color: var(--textdim); }
+
+  .info-rows { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; }
+  .info-key { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; color: var(--textdim); text-transform: uppercase; }
+  .info-val { font-family: var(--mono); font-size: 0.8rem; color: var(--text); }
+  .led-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; }
+  .led-label { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.12em; color: var(--textdim); text-transform: uppercase; }
+  .led-bulb { width: 14px; height: 14px; border-radius: 50%; background: var(--dim); transition: all 0.3s ease; }
+  .led-bulb.on { background: var(--accent); box-shadow: 0 0 10px var(--accent),0 0 20px rgba(0,229,160,0.5); animation: led-pulse 1s ease-in-out infinite; }
+
+  .log-list { max-height: 320px; overflow-y: auto; padding: 8px; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+  .log-entry { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; border: 1px solid transparent; margin-bottom: 4px; animation: slide-in 0.3s ease; }
+  .log-entry.known   { background: rgba(0,229,160,0.05); border-color: rgba(0,229,160,0.15); }
+  .log-entry.unknown { background: rgba(255,59,92,0.05);  border-color: rgba(255,59,92,0.15); }
+  .log-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .log-entry.known .log-dot { background: var(--accent); } .log-entry.unknown .log-dot { background: var(--danger); }
+  .log-name  { flex: 1; font-size: 0.85rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log-badge { font-family: var(--mono); font-size: 0.58rem; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.08em; flex-shrink: 0; }
+  .log-entry.known .log-badge   { background: rgba(0,229,160,0.15); color: var(--accent); }
+  .log-entry.unknown .log-badge { background: rgba(255,59,92,0.15);  color: var(--danger); }
+  .log-time  { font-family: var(--mono); font-size: 0.65rem; color: var(--textdim); flex-shrink: 0; }
+  .log-empty { text-align: center; padding: 32px; color: var(--textdim); font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.1em; }
+
+  .stats-bar { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+  .stat-num  { font-size: 1.8rem; font-weight: 800; color: var(--accent); line-height: 1; margin-bottom: 4px; }
+  .stat-num.danger { color: var(--danger); }
+  .stat-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em; color: var(--textdim); text-transform: uppercase; }
+  .sheet-badge { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 4px; background: rgba(0,229,160,0.1); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); text-transform: uppercase; }
+
+  /* ── MODAL ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; z-index: 2000; background: rgba(4,8,14,0.92); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 420px; padding: 32px; position: relative; animation: modal-in 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+  .modal::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg,transparent,var(--warn),transparent); }
+  .modal-close { position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--textdim); cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .modal-close:hover { color: var(--text); background: rgba(255,255,255,0.1); }
+  .modal-title { font-size: 1rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; margin-bottom: 6px; }
+  .modal-sub   { font-family: var(--mono); font-size: 0.65rem; color: var(--textdim); letter-spacing: 0.1em; margin-bottom: 28px; }
+
+  .pw-icon  { font-size: 2.5rem; text-align: center; margin-bottom: 16px; }
+  .pw-input { width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 1rem; letter-spacing: 0.2em; outline: none; transition: border-color 0.2s; margin-bottom: 16px; }
+  .pw-input:focus { border-color: var(--warn); box-shadow: 0 0 0 2px rgba(255,184,0,0.1); }
+  .pw-input.error { border-color: var(--danger); animation: shake 0.4s ease; }
+
+  .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: #000; font-weight: 700; }
+  .btn-primary:hover { filter: brightness(1.1); }
+
+  #admin-panel { display: none; }
+
+  /* Admin info box */
+  .admin-info { padding: 14px 16px; border-radius: 8px; background: rgba(255,184,0,0.06); border: 1px solid rgba(255,184,0,0.2); font-family: var(--mono); font-size: 0.68rem; color: var(--warn); letter-spacing: 0.05em; line-height: 1.7; margin-bottom: 20px; }
+  .admin-info code { background: rgba(255,184,0,0.12); padding: 1px 6px; border-radius: 3px; font-size: 0.75rem; }
+
+  .face-list-title { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.15em; color: var(--textdim); text-transform: uppercase; margin-bottom: 12px; }
+  .face-chips { display: flex; flex-wrap: wrap; gap: 8px; min-height: 36px; }
+  .face-chip { font-family: var(--mono); font-size: 0.68rem; padding: 5px 12px; border-radius: 20px; background: rgba(0,229,160,0.08); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); display: flex; align-items: center; gap: 6px; }
+  .face-chip::before { content: '●'; font-size: 0.45rem; }
+
+  .admin-msg { margin-top: 14px; padding: 10px 14px; border-radius: 7px; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-align: center; display: none; }
+  .admin-msg.success { background: rgba(0,229,160,0.1); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); }
+  .admin-msg.error   { background: rgba(255,59,92,0.1);  color: var(--danger); border: 1px solid rgba(255,59,92,0.2); }
+
+  /* Toast */
+  .access-alert { position: fixed; top: 80px; right: 24px; padding: 14px 20px; border-radius: 10px; border: 1px solid; font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.08em; z-index: 3000; transform: translateX(120%); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1); max-width: 260px; }
+  .access-alert.granted { background: rgba(0,229,160,0.1); border-color: rgba(0,229,160,0.4); color: var(--accent); box-shadow: var(--glow); }
+  .access-alert.denied  { background: rgba(255,59,92,0.1);  border-color: rgba(255,59,92,0.4);  color: var(--danger); box-shadow: var(--glow-r); }
+  .access-alert.show { transform: translateX(0); }
+
+  @keyframes scan         { 0% { top:-2px; } 100% { top:100%; } }
+  @keyframes blink        { 0%,100% { opacity:1; } 50% { opacity:0; } }
+  @keyframes pulse-border { 0%,100% { box-shadow:var(--glow); } 50% { box-shadow:0 0 30px rgba(0,229,160,0.4); } }
+  @keyframes led-pulse    { 0%,100% { box-shadow:0 0 10px var(--accent),0 0 20px rgba(0,229,160,0.5); } 50% { box-shadow:0 0 16px var(--accent),0 0 32px rgba(0,229,160,0.7); } }
+  @keyframes slide-in     { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+  @keyframes modal-in     { from { opacity:0; transform:scale(0.92) translateY(12px); } to { opacity:1; transform:scale(1) translateY(0); } }
+  @keyframes shake        { 0%,100% { transform:translateX(0); } 20%,60% { transform:translateX(-6px); } 40%,80% { transform:translateX(6px); } }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    .camera-panel { grid-row: auto; }
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="access-alert" id="alert-toast"></div>
+
+<!-- ADMIN MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAdmin()">✕</button>
+
+    <!-- Password screen -->
+    <div id="pw-screen">
+      <div class="pw-icon">🔐</div>
+      <div class="modal-title">Admin Access</div>
+      <div class="modal-sub">ENTER PASSWORD TO CONTINUE</div>
+      <input class="pw-input" id="pw-input" type="password" placeholder="••••••••"
+             autocomplete="off" onkeydown="if(event.key==='Enter') verifyPassword()"/>
+      <button class="btn btn-primary" onclick="verifyPassword()">UNLOCK →</button>
+      <div class="admin-msg" id="pw-msg"></div>
+    </div>
+
+    <!-- Admin panel -->
+    <div id="admin-panel">
+      <div class="modal-title">Registered Faces</div>
+      <div class="modal-sub">ADMIN PANEL — SECUREVISION</div>
+
+      <div class="admin-info">
+        To add a new face, open a second terminal and run:<br>
+        <code>python add_face.py</code><br><br>
+        Press <code>SPACE</code> to capture, type the name, press <code>Enter</code>.<br>
+        The list below updates automatically within 1–2 seconds.
+      </div>
+
+      <div class="face-list-title">
+        Currently Registered &nbsp;<span id="face-count" style="color:var(--accent)">0</span>
+      </div>
+      <div class="face-chips" id="face-chips">
+        <span style="color:var(--textdim);font-family:var(--mono);font-size:0.65rem">Loading...</span>
+      </div>
+
+      <div class="admin-msg" id="admin-msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    <h1>Secure<span>Vision</span></h1>
+  </div>
+  <div class="header-right">
+    <div class="sys-time" id="sys-time">--:--:--</div>
+    <button class="admin-btn" onclick="openAdmin()">⚙ ADMIN</button>
+    <div class="sys-badge">● LIVE</div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div class="panel camera-panel">
+    <div class="panel-header">
+      <span class="panel-title">CAM-01 / MAIN ENTRANCE</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="sheet-badge">SHEETS ✓</span>
+        <div class="panel-dot"></div>
+      </div>
+    </div>
+    <div class="camera-wrap">
+      <img id="camera-feed" src="" alt="feed" style="display:none"/>
+      <div class="no-feed" id="no-feed">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="2" y="7" width="20" height="15" rx="2"/>
+          <path d="M17 7V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2"/>
+          <circle cx="12" cy="13" r="2"/>
+        </svg>
+        AWAITING FEED
+      </div>
+      <div class="camera-overlay" id="cam-overlay" style="display:none">
+        <div class="scan-line"></div>
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="camera-status-bar">
+          <span class="cam-label">FACE RECOGNITION ACTIVE</span>
+          <span class="rec-dot">REC</span>
+        </div>
+      </div>
+    </div>
+    <div style="padding:16px;">
+      <div class="stats-bar">
+        <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total Events</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-known">0</div><div class="stat-label">Known</div></div>
+        <div class="stat-card"><div class="stat-num danger" id="stat-unknown">0</div><div class="stat-label">Unknown</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Detection Status</span>
+        <div class="panel-dot"></div>
+      </div>
+      <div class="status-panel">
+        <div class="status-display" id="status-display">
+          <div class="status-icon" id="status-icon">👁</div>
+          <div class="status-label">Current Status</div>
+          <div class="status-value noface" id="status-value">Scanning...</div>
+        </div>
+        <div class="info-rows">
+          <div class="info-row"><span class="info-key">Last Person</span><span class="info-val" id="last-person">—</span></div>
+          <div class="info-row"><span class="info-key">Last Seen</span><span class="info-val" id="last-time">—</span></div>
+        </div>
+        <div class="led-row">
+          <span class="led-label">🔵 LED / Door Lock</span>
+          <div class="led-bulb" id="led-bulb"></div>
+        </div>
+        <div class="info-row" style="margin-top:0;">
+          <span class="info-key">LED State</span>
+          <span class="info-val" id="led-state" style="color:var(--textdim)">OFF</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="flex:1;">
+      <div class="panel-header">
+        <span class="panel-title">Event Log</span>
+        <span style="font-family:var(--mono);font-size:0.6rem;color:var(--textdim)">SYNCED → SHEETS</span>
+      </div>
+      <div class="log-list" id="log-list">
+        <div class="log-empty">NO EVENTS YET</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// Clock
+function updateClock() { document.getElementById('sys-time').textContent = new Date().toTimeString().slice(0,8); }
+setInterval(updateClock, 1000); updateClock();
+
+// Toast
+let alertTimer = null;
+function showAlert(msg, type) {
+  const el = document.getElementById('alert-toast');
+  el.textContent = msg; el.className = `access-alert ${type} show`;
+  clearTimeout(alertTimer);
+  alertTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// Dashboard poll
+let lastLogCount = 0, lastStatus = '';
+async function poll() {
+  try {
+    const data = await fetch('/api/state').then(r => r.json());
+
+    if (data.frame) {
+      const img = document.getElementById('camera-feed');
+      img.src = 'data:image/jpeg;base64,' + data.frame;
+      img.style.display = 'block';
+      document.getElementById('no-feed').style.display    = 'none';
+      document.getElementById('cam-overlay').style.display = 'block';
+    }
+
+    const disp = document.getElementById('status-display');
+    const icon = document.getElementById('status-icon');
+    const val  = document.getElementById('status-value');
+    if (data.status !== lastStatus) {
+      lastStatus = data.status;
+      disp.className = 'status-display'; val.className = 'status-value';
+      if (data.status === 'Known') {
+        disp.classList.add('known'); val.classList.add('known');
+        val.textContent = '✅ ACCESS GRANTED'; icon.textContent = '🟢';
+        if (data.last_person) showAlert('✓ ' + data.last_person + ' — Access Granted', 'granted');
+      } else if (data.status === 'Unknown') {
+        disp.classList.add('unknown'); val.classList.add('unknown');
+        val.textContent = '🚨 UNKNOWN PERSON'; icon.textContent = '🔴';
+        showAlert('⚠ Unknown Person Detected', 'denied');
+      } else {
+        val.classList.add('noface'); val.textContent = 'Scanning...'; icon.textContent = '👁';
+      }
+    }
+
+    document.getElementById('last-person').textContent = data.last_person || '—';
+    document.getElementById('last-time').textContent   = data.last_time   || '—';
+
+    const bulb = document.getElementById('led-bulb');
+    const ledTxt = document.getElementById('led-state');
+    if (data.led) {
+      bulb.classList.add('on'); ledTxt.style.color = 'var(--accent)'; ledTxt.textContent = 'ON — UNLOCKED';
+    } else {
+      bulb.classList.remove('on'); ledTxt.style.color = 'var(--textdim)'; ledTxt.textContent = 'OFF — LOCKED';
+    }
+
+    const logs = data.logs || [];
+    document.getElementById('stat-total').textContent   = logs.length;
+    document.getElementById('stat-known').textContent   = logs.filter(l=>l.type==='known').length;
+    document.getElementById('stat-unknown').textContent = logs.filter(l=>l.type==='unknown').length;
+    if (logs.length !== lastLogCount) {
+      lastLogCount = logs.length;
+      const list = document.getElementById('log-list');
+      list.innerHTML = logs.length === 0 ? '<div class="log-empty">NO EVENTS YET</div>'
+        : logs.map(l => `<div class="log-entry ${l.type}"><div class="log-dot"></div>
+            <div class="log-name">${l.name}</div>
+            <div class="log-badge">${l.type==='known'?'GRANTED':'DENIED'}</div>
+            <div class="log-time">${l.time}</div></div>`).join('');
+    }
+  } catch(e) {}
+}
+setInterval(poll, 300); poll();
+
+// Admin modal
+let adminUnlocked = false;
+let facePoller    = null;
+let lastFaceCount = -1;
+
+function openAdmin() {
+  document.getElementById('modal-overlay').classList.add('active');
+  if (!adminUnlocked) {
+    document.getElementById('pw-screen').style.display   = 'block';
+    document.getElementById('admin-panel').style.display = 'none';
+    setTimeout(() => document.getElementById('pw-input').focus(), 100);
+  } else {
+    showAdminPanel();
+  }
+}
+
+function closeAdmin() {
+  clearInterval(facePoller); facePoller = null; lastFaceCount = -1;
+  document.getElementById('modal-overlay').classList.remove('active');
+  document.getElementById('pw-input').value = '';
+  hideMsg('pw-msg');
+}
+
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeAdmin();
+});
+
+async function verifyPassword() {
+  const pw  = document.getElementById('pw-input').value;
+  const inp = document.getElementById('pw-input');
+  if (!pw) return;
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({password: pw})
+    });
+    if (res.ok) { adminUnlocked = true; showAdminPanel(); }
+    else {
+      inp.classList.add('error');
+      showMsg('pw-msg', '❌ Wrong password', 'error');
+      setTimeout(() => inp.classList.remove('error'), 500);
+      inp.value = '';
+    }
+  } catch(e) { showMsg('pw-msg', '❌ Server unreachable', 'error'); }
+}
+
+function showAdminPanel() {
+  document.getElementById('pw-screen').style.display   = 'none';
+  document.getElementById('admin-panel').style.display = 'block';
+  loadFaceList();
+  facePoller = setInterval(loadFaceList, 1500);
+}
+
+async function loadFaceList() {
+  try {
+    const data = await fetch('/api/admin/faces').then(r => r.json());
+    if (data.count === lastFaceCount) return;
+    const prev = lastFaceCount;
+    lastFaceCount = data.count;
+    document.getElementById('face-count').textContent = data.count;
+    const chips = document.getElementById('face-chips');
+    if (data.faces && data.faces.length > 0) {
+      chips.innerHTML = data.faces.map(n => `<span class="face-chip">${n}</span>`).join('');
+      if (prev >= 0 && data.count > prev) {
+        showMsg('admin-msg', '✅ New face added — recognition active immediately', 'success');
+        setTimeout(() => hideMsg('admin-msg'), 3000);
+      }
+    } else {
+      chips.innerHTML = '<span style="color:var(--textdim);font-family:var(--mono);font-size:0.65rem">No faces registered yet</span>';
+    }
+  } catch(e) {}
+}
+
+function showMsg(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = `admin-msg ${type}`; el.style.display = 'block';
+}
+function hideMsg(id) { document.getElementById(id).style.display = 'none'; }
+</script>
+</body>
+</html>
