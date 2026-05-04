@@ -325,11 +325,11 @@ async function poll() {
       disp.className = 'status-display'; val.className = 'status-value';
       if (data.status === 'Known') {
         disp.classList.add('known'); val.classList.add('known');
-        val.textContent = '✅ ACCESS GRANTED'; icon.textContent = '🟢';
+        val.textContent = 'ACCESS GRANTED'; icon.textContent = '🟢';
         if (data.last_person) showAlert('✓ ' + data.last_person + ' — Access Granted', 'granted');
       } else if (data.status === 'Unknown') {
         disp.classList.add('unknown'); val.classList.add('unknown');
-        val.textContent = '🚨 UNKNOWN PERSON'; icon.textContent = '🔴';
+        val.textContent = 'UNKNOWN PERSON'; icon.textContent = '🔴';
         showAlert('⚠ Unknown Person Detected', 'denied');
       } else {
         val.classList.add('noface'); val.textContent = 'Scanning...'; icon.textContent = '👁';
@@ -403,11 +403,11 @@ async function verifyPassword() {
     if (res.ok) { adminUnlocked = true; showAdminPanel(); }
     else {
       inp.classList.add('error');
-      showMsg('pw-msg', '❌ Wrong password', 'error');
+      showMsg('pw-msg', 'Wrong password', 'error');
       setTimeout(() => inp.classList.remove('error'), 500);
       inp.value = '';
     }
-  } catch(e) { showMsg('pw-msg', '❌ Server unreachable', 'error'); }
+  } catch(e) { showMsg('pw-msg', 'Server unreachable', 'error'); }
 }
 
 function showAdminPanel() {
@@ -428,7 +428,7 @@ async function loadFaceList() {
     if (data.faces && data.faces.length > 0) {
       chips.innerHTML = data.faces.map(n => `<span class="face-chip">${n}</span>`).join('');
       if (prev >= 0 && data.count > prev) {
-        showMsg('admin-msg', '✅ New face added — recognition active immediately', 'success');
+        showMsg('admin-msg', 'New face added — recognition active immediately', 'success');
         setTimeout(() => hideMsg('admin-msg'), 3000);
       }
     } else {
