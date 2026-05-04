@@ -14,7 +14,7 @@ byte rowPins[ROWS] = {9, 8, 7, 6}; // R1-R4
 byte colPins[COLS] = {5, 4, 3, 2}; // C1-C4
 
 const char password[] = "2018A";
-char inputBuffer[5];
+char inputBuffer[6];
 byte indexPos = 0;
 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
@@ -26,11 +26,18 @@ void setup() {
 }
 
 void loop() {
-
   char key = keypad.getKey();
+
   if (key) {
     Serial.print("Key Pressed: ");
     Serial.println(key);
+
+    if (key == '#') {
+      Serial.println("Input cleared");
+      indexPos = 0;
+      memset(inputBuffer, 0, sizeof(inputBuffer));
+      return;
+    }
 
     inputBuffer[indexPos] = key;
     indexPos++;
@@ -43,12 +50,13 @@ void loop() {
         digitalWrite(12, HIGH);
         delay(2000);
         digitalWrite(12, LOW);
-      } 
-      else {
+      } else {
         Serial.println("Wrong password");
         digitalWrite(12, LOW);
       }
+
       indexPos = 0;
+      memset(inputBuffer, 0, sizeof(inputBuffer));
     }
   }
 
@@ -57,5 +65,4 @@ void loop() {
     if (cmd == '1') digitalWrite(12, HIGH);
     else if (cmd == '0') digitalWrite(12, LOW);
   }
-
 }
