@@ -19,8 +19,8 @@ from google.oauth2.service_account import Credentials
 import base64
 
 # ─── CONFIG ──────────────────────────────────────────────
-PORT            = "COM11"
-BAUD            = 9600
+PORT            = "COM11" # Laptop COM port
+BAUD            = 9600 # same baud rate in arduino ide
 KNOWN_FACES_DIR = "known_faces"
 TOLERANCE       = 0.5
 LED_ON_DURATION = 3
@@ -28,7 +28,7 @@ FRAME_SCALE     = 0.25
 LOG_COOLDOWN    = 60
 BURST_THRESHOLD = 3
 GOOGLE_CREDS    = "credentials.json"
-SHEET_NAME      = "Doorbell Log"
+SHEET_NAME      = "Doorbell Log" # change as per need
 ADMIN_PASSWORD  = "admin123"
 RELOAD_TRIGGER  = ".reload_faces"
 UNKNOWN_FACES_DIR = "unknown_faces"
@@ -248,7 +248,7 @@ def detection_loop():
 
                 if is_known:
                     speak("Access Granted")
-                    print(f"[DETECTED] ✅ {label} — logged")
+                    print(f"[DETECTED] {label} — logged")
                 if not is_known:
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     filename = f"{UNKNOWN_FACES_DIR}/unknown_{timestamp}.jpg"
@@ -264,7 +264,7 @@ def detection_loop():
                     except Exception as e:
                         print(f"[ERROR] Saving unknown face failed: {e}")
                 else:
-                    print(f"[DETECTED] ❌ Unknown — logged")
+                    print(f"[DETECTED] Unknown — logged")
 
             s = int(1 / FRAME_SCALE)
             t, r, b, l = top*s, right*s, bottom*s, left*s
